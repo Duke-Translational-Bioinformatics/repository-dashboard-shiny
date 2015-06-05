@@ -2,9 +2,10 @@
 # Program: global.R
 # Programmer: Ben Neely
 # Date: 6/5/15
-# Dependencies: shiny,httr
+# Dependencies: shiny,httr,ggplot2
 ################################################
 library(httr)
+library(ggplot2)
 #This should be set by user on screen
 repoURL = "https://api.github.com/repos/Duke-Translational-Bioinformatics/duke-data-service/issues?state=all"
 sprintDeadlines <- c(strptime("2015-05-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
@@ -82,8 +83,10 @@ makeDataFrame <- function(h) {#-------------------------------------------------
     temp <- output[which( ((output$ticketOpenDate>=sprintDeadlinesToday[j]) & (output$ticketOpenDate<sprintDeadlinesToday[j+1])) |
                              ((output$ticketOpenDate<sprintDeadlinesToday[j+1]) & (output$ticketState=='open'))),]
     temp$sprint <- rep(paste0("Sprint ",j-1),nrow(temp))
+    temp$sprintDate <-  sprintDeadlinesToday[j+1] 
     if (j==1) {final <- temp} else { final <- rbind(final,temp)}
   }
+
   return(final)
 }#-----------------------------------------------------------------------------------------------------------------------
 #GET the data and put in a dataframe that can be used for backlog and other metrics
