@@ -9,7 +9,6 @@ library(ggplot2)
 #This should be set by user on screen
 repoURL = "https://api.github.com/repos/Duke-Translational-Bioinformatics/duke-data-service/issues?state=all"
 sprintDeadlines <- c(strptime("2015-05-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
-                     strptime("2015-06-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-06-08T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-06-26T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-07-17T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
@@ -83,12 +82,31 @@ makeDataFrame <- function(h) {#-------------------------------------------------
     temp <- output[which( ((output$ticketOpenDate>=sprintDeadlinesToday[j]) & (output$ticketOpenDate<sprintDeadlinesToday[j+1])) |
                              ((output$ticketOpenDate<sprintDeadlinesToday[j+1]) & (output$ticketState=='open'))),]
     temp$sprint <- rep(paste0("Sprint ",j-1),nrow(temp))
-    temp$sprintDate <-  sprintDeadlinesToday[j+1] 
+    temp$sprintBeginDate <-  sprintDeadlinesToday[j] 
+    temp$sprintEndDate <-  sprintDeadlinesToday[j+1] 
+    temp$currentSprint <- rep(0,nrow(temp))
     if (j==1) {final <- temp} else { final <- rbind(final,temp)}
   }
-
+  final <- final[order(final$sprint,-as.numeric(final$ticketState)),]
   return(final)
 }#-----------------------------------------------------------------------------------------------------------------------
 #GET the data and put in a dataframe that can be used for backlog and other metrics
 apiResults <- makeDataFrame(h)
-
+#------------------------------------------------------------------------------------------------------------------------
+bySprint <- function(x) { #Assumes a data.frame from makeDataFrame is supplied
+  currentSprint <- x[which(x$sprint==min(x$sprint)),]
+  days <- seq(unique(currentSprint$sprintBeginDate),unique(currentSprint$sprintEndDate),by="days")
+  for (z in 1:(length(days))) {
+    day <- days[z]
+    openSize <- sum(currentSprint$ticketSize)
+    closeSize <- nrow(currentSprint[which(as.Date(currentSprint$ticketCloseDate)==as.Date(day)),])
+    out <- data.frame(day,openSize,closeSize)
+    if (z==1) {final <- out} else {final <- rbind(final,out)}
+    if (sum(as.Date(currentSprint$ticketCloseDate)==as.Date(day),na.rm=T)>0) {
+    currentSprint <- currentSprint[-which(as.Date(currentSprint$ticketCloseDate)==as.Date(day)),]
+    }
+  }
+  final <- final[which(as.numeric(as.Date(final$day))<=as.numeric(as.Date(as.POSIXlt(Sys.time(), "GMT")))),]
+  return(final)
+}
+currentSprintSum <- bySprint(apiResults)
