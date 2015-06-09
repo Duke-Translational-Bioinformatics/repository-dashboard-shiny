@@ -12,8 +12,8 @@ shinyUI(navbarPage("GitHub Issue Dashboard", theme="style.css",
                               )
                             )
                    ),
-                   tabPanel("Summary",
-                            verbatimTextOutput("summary")
+                   tabPanel("User Summary",
+                            plotOutput("summary")
                    ),
                    navbarMenu("More",
                               tabPanel("Table",

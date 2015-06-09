@@ -6,6 +6,7 @@
 ################################################
 library(httr)
 library(ggplot2)
+library(plotrix)
 #This should be set by user on screen
 repoURL = "https://api.github.com/repos/Duke-Translational-Bioinformatics/duke-data-service/issues?state=all"
 sprintDeadlines <- c(strptime("2015-05-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
@@ -94,7 +95,7 @@ makeDataFrame <- function(h) {#-------------------------------------------------
 apiResults <- makeDataFrame(h)
 #------------------------------------------------------------------------------------------------------------------------
 bySprint <- function(x) { #Assumes a data.frame from makeDataFrame is supplied
-  currentSprint <- x[which(x$sprint==min(x$sprint)),]
+  currentSprint <- x[which(x$sprint==max(x$sprint)),]
   days <- seq(unique(currentSprint$sprintBeginDate),unique(currentSprint$sprintEndDate),by="days")
   for (z in 1:(length(days))) {
     day <- days[z]
@@ -107,6 +108,10 @@ bySprint <- function(x) { #Assumes a data.frame from makeDataFrame is supplied
     }
   }
   final <- final[which(as.numeric(as.Date(final$day))<=as.numeric(as.Date(as.POSIXlt(Sys.time(), "GMT")))),]
-  return(final)
+  return(list(df=final,
+              lastDay=tail(days,n=1)))
 }
 currentSprintSum <- bySprint(apiResults)
+
+#gut check
+#GET("https://api.github.com/rate_limit")
