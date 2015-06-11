@@ -6,7 +6,6 @@
 ################################################
 library(httr)
 library(ggplot2)
-library(plotrix)
 #This should be set by user on screen
 repoURL = "https://api.github.com/repos/Duke-Translational-Bioinformatics/duke-data-service/issues?state=all"
 sprintDeadlines <- c(strptime("2015-05-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
@@ -16,6 +15,7 @@ sprintDeadlines <- c(strptime("2015-05-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-08-07T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-08-28T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-09-18T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"))
+sizeColor = "fad8c7" #hexidecimal color for Github label that indicates size of the task (for weighting)
 #No matter pagination or not, below we need a function to parse the api response and create a consumable data type (data.frame) for shiny
 apiConsumer <- function(x) { #x is of type 'response' from the httr package-----------------------------------------------
                          titles <- sapply(content(x,"parsed"), function(y) return(y$title))
@@ -24,6 +24,9 @@ apiConsumer <- function(x) { #x is of type 'response' from the httr package-----
                          ticketState <- sapply(content(x,"parsed"), function(y) return(y$state))
                          ticketOpenDate <- as.character(sapply(content(x,"parsed"), function(y) return(y$created_at)))
                          ticketCloseDate <- as.character(sapply(content(x,"parsed"), function(y) return(y$closed_at)))
+                         #Get the size of the card
+                         ttt<-sapply(content(x,"parsed"),function(x) sapply(x$labels,function(z) { if (z$color=="fad8c7") {return(z$name)}}))
+                        
                          #Need to Identify a way to get size, this is current stuck
                          #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
                          #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
