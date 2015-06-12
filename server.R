@@ -7,8 +7,8 @@ shinyServer(function(input, output, session) {
     #If backlog, return a bar plot showing the backlog graphic
     if (input$plotType == "b") {
     return(
-    ggplot(data=apiResults)+
-      geom_bar(stat="identity", aes(x=sprintBeginDate, fill=ticketState, y=ticketSize))+
+    ggplot(data=apiResults$final)+
+      geom_bar(stat="identity", aes(x=backlogBeginDate, fill=ticketState, y=ticketSize+1))+
       scale_fill_manual(values=c("#001A57","#B5B5B5")) +
       geom_vline(xintercept=as.numeric(tail(sprintDeadlines,n=1)), colour = "red")+
       geom_text(data=data.frame(x=tail(sprintDeadlines,n=1),y=paste0("Due Date: ",tail(sprintDeadlines,n=1))),
@@ -17,21 +17,22 @@ shinyServer(function(input, output, session) {
       theme(panel.grid.major=element_blank(),
             legend.title=element_blank(),
             legend.position="bottom")+
-      ylab("Size of Task")+
-      xlab("Date"))
+      ylab("Total Points")+
+      xlab("Date")
+    )
     #If current sprint, show it by week
     } else if (input$plotType == "c") {
       return(
-        ggplot(data=currentSprintSum$df)+
+        ggplot(data=currentSprintSum)+
           geom_bar(stat="identity", aes(x=day, y=openSize, fill=openSize))+
-          geom_vline(xintercept=as.numeric(currentSprintSum$lastDay), colour = "red")+
-          geom_text(data=data.frame(x=currentSprintSum$lastDay,y=paste0("Current Sprint Due Date: ",currentSprintSum$lastDay)),
+          geom_vline(xintercept=as.numeric(max(currentSprintSum$day)), colour = "red")+
+          geom_text(data=data.frame(x=max(currentSprintSum$day),y=paste0("Current Sprint Due Date: ",max(currentSprintSum$day))),
                     mapping=aes(x=x, y=0, label=y), size=4, angle=90, vjust=-0.4, hjust=0) +
           theme_bw()+
           theme(panel.grid.major=element_blank(),
                 legend.title=element_blank(),
                 legend.position="none")+
-          ylab("Size of Task")+
+          ylab("Total Points")+
           xlab("Date")
         
         )
@@ -39,7 +40,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$summary <- renderPlot({    
-    ggplot(data=apiResults[!duplicated(apiResults$ticketOrder),])+
+    ggplot(data=apiResults$final[!duplicated(apiResults$final$ticketOrder),])+
     geom_bar(aes(x=factor(""),fill=assignedTicket),colour="black")+
     coord_polar(theta="y")+
     scale_x_discrete("")+
