@@ -147,5 +147,9 @@ bySprint <- function(x) { #Assumes a data.frame from makeDataFrame is supplied
   return(sprintTot)
 }
 currentSprintSum <- bySprint(apiResults)
+
+#The following needed for the dropdown menu
+names(apiResults$sprints) <- apiResults$sprints
+apiResults$sprints <- c("Backlog"="Backlog",apiResults$sprints)
 #gut check
 #GET("https://api.github.com/rate_limit")
