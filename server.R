@@ -65,7 +65,7 @@ shinyServer(function(input, output, session) {
     if (is.null(input$plotType)) {return(NULL)} else if (input$plotType == "Backlog") {
     tempDF <- apiResults$final[which(apiResults$final$backlog==max(apiResults$final$backlog)),]
     last   <- tail(sprintDeadlines,n=1)
-    avg <- mean(tempDF$ticketSize[which(tempDF$ticketState=="closed")])
+    avg <- sum(tempDF$ticketSize[which(tempDF$ticketState=="closed")])/sum(tempDF$ticketSize)
     req <- sum(tempDF$ticketSize)/as.numeric(tail(sprintDeadlines,n=1)-tempDF$backlogBeginDate[1])
     proj<- ceiling(sum(tempDF$ticketSize[which(tempDF$ticketState=="open")])/avg)
     finish <- tempDF$backlogBeginDate[1]+(proj*60*60*24)
