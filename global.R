@@ -6,6 +6,7 @@
 ################################################
 library(httr)
 library(ggplot2)
+library(chron)
 #This should be set by user on screen
 repoURL = "https://api.github.com/repos/Duke-Translational-Bioinformatics/duke-data-service/issues?state=all"
 sprintDeadlines <- c(strptime("2015-05-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),

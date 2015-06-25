@@ -1,5 +1,111 @@
 shinyServer(function(input, output, session) {
+  
+  #User Defined Functions to accomplish repetative tasks throughout the remaining code----------------------------------------  
+  estimateCompleteDateNoWkds <- function(y,x){
+    if (x==1) { 
+      days <- tail(seq(as.Date(y), by = "day", length.out = x+1),n=1)
+    } else {
+      days <- seq(as.Date(y), by = "day", length.out = x)
+    }
+    logic <- (!is.weekend(days))
+    added <- sum(logic==FALSE)
+    if (added>0) {estimateCompleteDateNoWkds(y=tail(days,n=1),
+                                             x=added)} else {return(tail(days,n=1))}
+    
+  }
+  #--------------------------------------------------------------------------------------------------------------------------- 
+  #Data will change based on user input (i.e. dynamic), so this function generates dynamic data------------------------------- 
+  metrics <- reactive({
+    #Not finished building loading yet ---------------------------------------
+    if (is.null(input$plotType)) {
+      return(NULL)
+    #Default, or user selected Backlog graphic--------------------------------
+      } else if (input$plotType == "Backlog") {
+      tempDF      <- apiResults$final[which(apiResults$final$backlog==max(apiResults$final$backlog)),]
+      myDays      <- seq.Date(to   = as.Date(Sys.time()), from = as.Date(tempDF$backlogBeginDate)[1], by   = 1)
+      days2today  <- length(myDays[!is.weekend(myDays)])
+      myDays      <- seq.Date(to   = as.Date(tail(sprintDeadlines,n=1)), from = as.Date(Sys.time()), by   = 1)
+      days2end    <- length(myDays[!is.weekend(myDays)])
+      last        <- tail(sprintDeadlines,n=1)
+      avg         <- ceiling(sum(tempDF$ticketSize[which(tempDF$ticketState=="closed")])/days2today)
+      req         <- ceiling(sum(tempDF$ticketSize)/ days2end)
+      proj        <- ceiling(sum(tempDF$ticketSize[which(tempDF$ticketState=="open")])/avg)
+      #Added recursive function to determine the projected end date-----------------------------------------------
+      #End of function and call it--------------------------------------------------------------------------------    
+      finish <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj)
+      if (is.na(finish)) {late<-'***not started'} else if (as.Date(finish)>as.Date(last)) {late<-'projected late - get crackin\''} else {late<-'on target - good job!'} 
+      return(list(tempDF=tempDF,
+                  avg=avg,
+                  req=req,
+                  proj=proj,
+                  finish=finish,
+                  late=late))
+    #Any of the sprint chose
+    } else {
+#       #Three scenarios exist: (1) Sprints that are complete - (2) Current Sprints - (3) Future Sprints
+      tempDF      <- currentSprintSum[which(currentSprintSum$sprintNo==input$plotType),]
+      last        <- tail(tempDF$day,n=1)
+      head        <- head(tempDF$day,n=1)
+      test        <- which(tempDF$day<=Sys.time())
+      if (length(test)>0) {tempDF2 <- tempDF[test,]} else {tempDF2 <- tempDF[c(1),]}
+#       #Let's determin where we are:
+#       #(1) Past Sprints?:
+      if (Sys.time()>last){
+              traj        <- seq(from=head(tempDF$openSize,n=1), to=tail(tempDF$openSize,n=1), length.out=nrow(tempDF))
+              goal        <- seq(from=head(tempDF$openSize,n=1), to=0, length.out=nrow(tempDF))
+              df2         <- data.frame(tempDF$day,goal,traj)
+              days2end    <- 0
+              req         <- ceiling(sum(tail(tempDF$openSize,n=1)))  
+              myDays      <- seq.Date(to   = as.Date(tail(tempDF$day,n=1)), from = as.Date(tempDF$day[1]), by   = 1)
+              days2today  <- length(myDays[!is.weekend(myDays)])  
+              avg         <- ceiling(sum(tempDF$closeSize)/days2today)   
+              proj        <- ceiling(sum(tail(tempDF$openSize,n=1))/avg)
+              finish      <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj)
+              if (req>0) {status="Sprint Over: Open Tickets Still Exist"} else {status="Sprint Over: All Tickets Closed!"}
+  
+        #(2) FUTURE:
+      } else if (Sys.time()<head) {
+              traj        <- seq(from=head(tempDF2$openSize,n=1), to=0, length.out=nrow(tempDF))
+              goal        <- seq(from=head(tempDF$openSize,n=1), to=0, length.out=nrow(tempDF))
+              df2         <- data.frame(tempDF$day,goal,traj)
+              myDays      <- seq.Date(to   = as.Date(tail(tempDF$day,n=1)), from = as.Date(head(tempDF$day,n=1)), by   = 1)
+              days2end    <- length(myDays[!is.weekend(myDays)])
+              req         <- ceiling(sum(tail(tempDF$openSize,n=1))/ days2end)
+              myDays      <- seq.Date(to   = as.Date(tail(tempDF$day,n=1)), from = as.Date(head(tempDF$day,n=1)), by   = 1)
+              days2today  <- length(myDays[!is.weekend(myDays)])  
+              avg         <- NA 
+              proj        <- NA
+              finish      <- NA
+              status      <- "FUTURE Sprint - no status available at this time"
+         #(3) PRESENT:
+      } else {
+              traj        <- seq(from=head(tempDF2$openSize,n=1), to=tail(tempDF2$openSize,n=1), length.out=nrow(tempDF))
+              goal        <- seq(from=head(tempDF$openSize,n=1), to=0, length.out=nrow(tempDF))
+              df2         <- data.frame(tempDF$day,goal,traj)
+              myDays      <- seq.Date(to   = as.Date(tail(tempDF$day,n=1)), from = as.Date(Sys.time()), by   = 1)
+              days2end    <- length(myDays[!is.weekend(myDays)])
+              req         <- ceiling(sum(tail(tempDF$openSize,n=1))/ days2end)  
+              myDays      <- seq.Date(to   = as.Date(Sys.time()), from = as.Date(tempDF$day[1]), by   = 1)
+              days2today  <- length(myDays[!is.weekend(myDays)])  
+              avg         <- ceiling(sum(tempDF$closeSize)/days2today)  
+              proj        <- ceiling(sum(tail(tempDF$openSize,n=1))/avg)
+              finish      <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj) 
+              if (as.Date(finish)>as.Date(last)) {status="projected late - get crackin\'"
+              } else {status='on target - good job!'}
+      }
+     return(list(tempDF=tempDF,
+              tempDF2=tempDF2,
+              last=tail(tempDF$day,n=1),
+              df2=df2,
+              avg=avg,
+              req=req,
+              proj=proj,
+              finish=finish,
+              late=status))
 
+  } 
+})
+  #--------------------------------------------------------------------------------------------------------------------------- 
   output$plot <- renderPlot({
     #If NULL, nothing
     if (is.null(input$plotType))
@@ -22,16 +128,15 @@ shinyServer(function(input, output, session) {
     )
     #If current sprint, show it by week
     } else {
-      tempDF <- currentSprintSum[which(currentSprintSum$sprintNo==input$plotType),]
-      last   <- tail(tempDF$day,n=1)
-      test   <- which(tempDF$day<=Sys.time())
-      if (length(test)>0) {tempDF <- tempDF[test,]} else {tempDF <- tempDF[c(1),]}
+      print(names(metrics()))
       return(
-        ggplot(data=tempDF)+
+        ggplot(data=metrics()$tempDF2)+
           geom_bar(stat="identity", aes(x=day, y=openSize, fill=openSize))+
-          geom_vline(xintercept=as.numeric(last)+(2*60*60*24), colour = "red")+
-          geom_text(data=data.frame(x=last+(2*60*60*24),y=paste0("Current Sprint Due Date:            ",last)),
+          geom_vline(xintercept=as.numeric(metrics()$last)+(2*60*60*24), colour = "#ca0020")+
+          geom_text(data=data.frame(x=metrics()$last+(2*60*60*24),y=paste0("Current Sprint Due Date:            ",metrics()$last)),
                     mapping=aes(x=x, y=0, label=y), size=4, angle=90, vjust=-0.4, hjust=0) +
+          geom_line(data=metrics()$df2, aes(x=tempDF.day, y=goal), colour="#f4a582", size=2)+
+          geom_line(data=metrics()$df2, aes(x=tempDF.day, y=traj), colour="#ca0020", size=2)+
           theme_bw()+
           theme(panel.grid.major=element_blank(),
                 legend.title=element_blank(),
@@ -42,58 +147,7 @@ shinyServer(function(input, output, session) {
         )
     }
   })
-
-#   output$summary <- renderPlot({    
-#     ggplot(data=apiResults$final[!duplicated(apiResults$final$ticketOrder),])+
-#     geom_bar(aes(x=factor(""),fill=assignedTicket),colour="black")+
-#     coord_polar(theta="y")+
-#     scale_x_discrete("")+
-#       theme_minimal()+
-#       theme(
-#         axis.title.x = element_blank(),
-#         axis.title.y = element_blank(),
-#         panel.border = element_blank(),
-#         panel.grid=element_blank(),
-#         axis.ticks = element_blank(),
-#         axis.text.x=element_blank(),
-#         legend.title=element_blank(),
-#         legend.position="right",
-#         plot.title=element_text(size=14, face="bold"))
-#   })
-  
-  metrics <- reactive({
-    if (is.null(input$plotType)) {return(NULL)} else if (input$plotType == "Backlog") {
-    tempDF <- apiResults$final[which(apiResults$final$backlog==max(apiResults$final$backlog)),]
-    last   <- tail(sprintDeadlines,n=1)
-    avg <- sum(tempDF$ticketSize[which(tempDF$ticketState=="closed")])/sum(tempDF$ticketSize)
-    req <- sum(tempDF$ticketSize)/as.numeric(tail(sprintDeadlines,n=1)-tempDF$backlogBeginDate[1])
-    proj<- ceiling(sum(tempDF$ticketSize[which(tempDF$ticketState=="open")])/avg)
-    finish <- tempDF$backlogBeginDate[1]+(proj*60*60*24)
-    if (is.na(finish)) {late<-'***not started'} else if (finish>last) {late<-'projected late - get crackin\''} else {late<-'on target - good job!'} 
-    return(list(avg=avg,
-                req=req,
-                proj=proj,
-                finish=finish,
-                late=late))
-    } else {
-    tempDF <- currentSprintSum[which(currentSprintSum$sprintNo==input$plotType),]
-    last   <- tail(tempDF$day,n=1)
-    test   <- which(tempDF$day<=Sys.time())
-    if (length(test)>0) {tempDF <- tempDF[test,]} else {tempDF <- tempDF[c(1),]}
-    avg <- mean(tempDF$closeSize)
-    req <- tempDF$openSize[1] / as.numeric(last-tempDF$day[1])
-    proj<- ceiling(tempDF$openSize[1]/avg)
-    finish <- tempDF$day[1]+(proj*60*60*24)
-    if (is.infinite(proj)) {late<-'need at least 1 closed ticket'} else if (finish>last) {late<-'projected late - get crackin\''} else {late<-'on target - good job!'}
-    return(list(avg=avg,
-                req=req,
-                proj=proj,
-                finish=finish,
-                late=late))
-    }
-    
-  })
-
+  #Return the following to the UI for display--------------------------------------------------------------------------------
   output$avg <- renderText({ paste0(ceiling(metrics()$avg)) })
   output$req <- renderText({ paste0(ceiling(metrics()$req)) })
   output$late<- renderText({ paste0(metrics()$late) })

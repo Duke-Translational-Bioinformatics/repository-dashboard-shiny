@@ -1,5 +1,3 @@
-
-
 shinyUI(fluidPage(
   
   title = "repository-dashboard-shiny",
@@ -20,14 +18,15 @@ shinyUI(fluidPage(
            strong("Points / Day")
     ),
     column(3,
-           strong("Required Velocity: "),
-           div(textOutput("req"), style = "color:#CBEA60"),
-           strong("Points / Day")
-    ),
-    column(3,
-           strong("Projected Completion Date: "),
+           strong("Projected Completion Date (at current velocity): "),
            div(textOutput("proj"), style = "color:#CBEA60"),
            div(textOutput("late"), style = "color:#ff0000")
+           
+    ),
+    column(3,
+           strong("Required Velocity (to complete on-time): "),
+           div(textOutput("req"), style = "color:#CBEA60"),
+           strong("Points / Day")
     )
   )
 ))# 
