@@ -98,7 +98,7 @@ makeDataFrame <- function(h) {#-------------------------------------------------
   #Add begin/end date for each sprint for visualizations
   sprints                 <- as.character(unique(sort(output$sprintNo)))
   sprints                 <- sprints[which(sprints!="NULL")]
-  sprintsBeginDT          <- sprintDeadlines[(1:length(sprints))]
+  sprintsBeginDT          <- sprintDeadlines[(1:length(sprints))]+(60*60*24)
   sprintsEndDT            <- sprintDeadlines[(1:length(sprints))+1]
   sprintDF                <- data.frame(sprints,sprintsBeginDT,sprintsEndDT,stringsAsFactors=F)
   colnames(sprintDF)      <- c("sprintNo","sprintBeginDT","sprintEndDT")
@@ -119,6 +119,7 @@ makeDataFrame <- function(h) {#-------------------------------------------------
   
   final <- final[order(final$backlog,-rank(final$ticketState)),]
   return(list(final=final,
+              finalll=finalll,
               sprintDF=sprintDF,
               sprints=sprints))
 }#-----------------------------------------------------------------------------------------------------------------------
@@ -130,7 +131,7 @@ bySprint <- function(x) { #Assumes a data.frame from makeDataFrame is supplied
   uniqueTix                 <- apiResults$final[!(duplicated(apiResults$final$ticketOrder)),]
   for (j in (1:length(apiResults$sprints))) {
     currentSprint           <- uniqueTix[which(uniqueTix$sprintNo==apiResults$sprints[j]),]
-    days                    <- seq(unique(currentSprint$sprintBeginDT),unique(currentSprint$sprintEndDT),by="days")
+    days                    <- seq(unique(currentSprint$sprintBeginDT)+(60*60*24),unique(currentSprint$sprintEndDT),by="days")
     for (z in 1:(length(days))) {
       day                   <- days[z]
       openSize              <- sum(currentSprint$ticketSize)

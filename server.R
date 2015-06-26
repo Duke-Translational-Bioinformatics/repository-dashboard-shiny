@@ -22,18 +22,26 @@ shinyServer(function(input, output, session) {
     #Default, or user selected Backlog graphic--------------------------------
       } else if (input$plotType == "Backlog") {
       tempDF      <- apiResults$final[which(apiResults$final$backlog==max(apiResults$final$backlog)),]
-      myDays      <- seq.Date(to   = as.Date(trunc(Sys.time(),'days')), from = as.Date(tempDF$backlogBeginDate)[1], by   = 1)
+      metricDat   <- apiResults$finalll
+      myDays      <- seq.Date(to   = as.Date(trunc(Sys.time(),'days')), from = as.Date(sprintDeadlines)[1], by   = 1)
       days2today  <- length(myDays[!is.weekend(myDays)])
       myDays      <- seq.Date(to   = as.Date(tail(sprintDeadlines,n=1)), from = as.Date(trunc(Sys.time(),'days')), by   = 1)
       days2end    <- length(myDays[!is.weekend(myDays)])
       last        <- tail(sprintDeadlines,n=1)
-      avg         <- ceiling(sum(tempDF$ticketSize[which(tempDF$ticketState=="closed")])/days2today)
-      req         <- ceiling(sum(tempDF$ticketSize)/ days2end)
+      avg         <- ceiling(sum(metricDat$ticketSize[which(metricDat$ticketState=="closed")])/days2today)
+      req         <- ceiling(sum(metricDat$ticketSize)/ days2end)
+      if (avg==0) {
+        proj        <- NA
+        finish      <- NA
+        late        <- 'No tickets closed - need some momentum to project!'
+        
+      } else {
       proj        <- ceiling(sum(tempDF$ticketSize[which(tempDF$ticketState=="open")])/avg)
       #Added recursive function to determine the projected end date-----------------------------------------------
       #End of function and call it--------------------------------------------------------------------------------    
       finish <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj)
       if (is.na(finish)) {late<-'***not started'} else if (as.Date(finish)>as.Date(last)) {late<-'projected late - get crackin\''} else {late<-'on target - good job!'} 
+      }
       return(list(tempDF=tempDF,
                   avg=avg,
                   req=req,
