@@ -34,7 +34,6 @@ getwd()
 ```
 Click the "Run App" button at the top right of the RStudio screen
 
-Open in RStudio and click 'Run App' 
 # Features #
 Utilizes the Github API v3 to extract issues and create a dashboard that contains the following visualizations:
 * Backlog Burndown
