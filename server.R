@@ -29,7 +29,7 @@ shinyServer(function(input, output, session) {
       days2end    <- length(myDays[!is.weekend(myDays)])
       last        <- tail(sprintDeadlines,n=1)
       avg         <- ceiling(sum(metricDat$ticketSize[which(metricDat$ticketState=="closed")])/days2today)
-      req         <- ceiling(sum(metricDat$ticketSize)/ days2end)
+      req         <- ceiling(sum(metricDat$ticketSize[which(metricDat$ticketState=="open")])/ days2end)
       if (avg==0) {
         proj        <- NA
         finish      <- NA
@@ -59,7 +59,7 @@ shinyServer(function(input, output, session) {
       if (length(test)>0) {tempDF2 <- tempDF[test,]} else {tempDF2 <- tempDF[c(1),]}
 #       #Let's determin where we are:
 #       #(1) Past Sprints?:
-      if (Sys.time()>last){
+      if (as.Date(trunc(Sys.time(),'days'))>as.Date(last)){
               traj        <- seq(from=head(tempDF$openSize,n=1), to=tail(tempDF$openMinusClose,n=1), length.out=nrow(tempDF))
               goal        <- seq(from=head(tempDF$openSize,n=1), to=0, length.out=nrow(tempDF))
               df2         <- data.frame(tempDF$day,goal,traj)
@@ -73,7 +73,7 @@ shinyServer(function(input, output, session) {
               if (req>0) {status="Sprint Over: Open Tickets Still Exist"} else {status="Sprint Over: All Tickets Closed!"}
   
         #(2) FUTURE:
-      } else if (Sys.time()<head) {
+      } else if (as.Date(trunc(Sys.time(),'days'))<as.Date(last)) {
               traj        <- seq(from=head(tempDF2$openSize,n=1), to=0, length.out=nrow(tempDF))
               goal        <- seq(from=head(tempDF$openSize,n=1), to=0, length.out=nrow(tempDF))
               df2         <- data.frame(tempDF$day,goal,traj)
@@ -140,9 +140,9 @@ shinyServer(function(input, output, session) {
       return(
         ggplot(data=metrics()$tempDF2)+
           geom_bar(stat="identity", aes(x=day, y=openMinusClose, fill=openMinusClose))+
-          geom_vline(xintercept=as.numeric(metrics()$last)+(2*60*60*24), colour = "#ca0020")+
-          geom_text(data=data.frame(x=metrics()$last+(2*60*60*24),y=paste0("Current Sprint Due Date:            ",metrics()$last)),
-                    mapping=aes(x=x, y=0, label=y), size=4, angle=90, vjust=-0.4, hjust=0) +
+          geom_vline(xintercept=as.numeric(metrics()$last), colour = "#ca0020")+
+          geom_text(data=data.frame(x=metrics()$last,y=paste0("Current Sprint Due Date:            ",metrics()$last)),
+                    mapping=aes(x=x, y=3, label=y), size=4, angle=90, vjust=-0.4, hjust=0) +
           geom_line(data=metrics()$df2, aes(x=tempDF.day, y=goal), colour="#f4a582", size=2)+
           geom_line(data=metrics()$df2, aes(x=tempDF.day, y=traj), colour="#ca0020", size=2)+
           theme_bw()+

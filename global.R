@@ -7,7 +7,7 @@
 library(httr)
 library(ggplot2)
 library(chron)
-#This should be set by user on screen
+#This should be set by user on screen---------------------------------------------------------------------------------------------
 repoURL = "https://api.github.com/repos/Duke-Translational-Bioinformatics/duke-data-service/issues?state=all"
 sprintDeadlines <- c(strptime("2015-05-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-06-08T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
@@ -17,6 +17,9 @@ sprintDeadlines <- c(strptime("2015-05-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-08-28T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-09-18T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"))
 sizeColor = "fad8c7" #hexidecimal color for Github label that indicates size of the task (for weighting)
+###########################
+#No more user input needed
+###########################------------------------------------------------------------------------------------------------------
 #No matter pagination or not, below we need a function to parse the api response and create a consumable data type (data.frame) for shiny
 apiConsumer <- function(x) { #x is of type 'response' from the httr package-----------------------------------------------
                          titles       <- sapply(content(x,"parsed"), function(y) return(y$title))
@@ -98,7 +101,7 @@ makeDataFrame <- function(h) {#-------------------------------------------------
   #Add begin/end date for each sprint for visualizations
   sprints                 <- as.character(unique(sort(output$sprintNo)))
   sprints                 <- sprints[which(sprints!="NULL")]
-  sprintsBeginDT          <- sprintDeadlines[(1:length(sprints))]+(60*60*24)
+  sprintsBeginDT          <- sprintDeadlines[(1:length(sprints))]
   sprintsEndDT            <- sprintDeadlines[(1:length(sprints))+1]
   sprintDF                <- data.frame(sprints,sprintsBeginDT,sprintsEndDT,stringsAsFactors=F)
   colnames(sprintDF)      <- c("sprintNo","sprintBeginDT","sprintEndDT")
@@ -131,7 +134,7 @@ bySprint <- function(x) { #Assumes a data.frame from makeDataFrame is supplied
   uniqueTix                 <- apiResults$final[!(duplicated(apiResults$final$ticketOrder)),]
   for (j in (1:length(apiResults$sprints))) {
     currentSprint           <- uniqueTix[which(uniqueTix$sprintNo==apiResults$sprints[j]),]
-    days                    <- seq(unique(currentSprint$sprintBeginDT)+(60*60*24),unique(currentSprint$sprintEndDT),by="days")
+    days                    <- seq(unique(currentSprint$sprintBeginDT),unique(currentSprint$sprintEndDT),by="days")
     for (z in 1:(length(days))) {
       day                   <- days[z]
       openSize              <- sum(currentSprint$ticketSize)
