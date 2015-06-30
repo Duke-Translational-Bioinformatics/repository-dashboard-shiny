@@ -60,11 +60,7 @@ shinyServer(function(input, output, session) {
 #       #Let's determin where we are:
 #       #(1) Past Sprints?:
       if (as.Date(trunc(Sys.time(),'days'))>as.Date(last)){
-              traj        <- seq(from=head(tempDF$openSize,n=1), to=tail(tempDF$openMinusClose,n=1), length.out=nrow(tempDF))
-              goal        <- seq(from=head(tempDF$openSize,n=1), to=0, length.out=nrow(tempDF))
-              df2         <- data.frame(tempDF$day,goal,traj)
-              days2end    <- 0
-              req         <- ceiling(sum(tail(tempDF$openMinusClose,n=1)))
+        req         <- ceiling(sum(tail(tempDF$openMinusClose,n=1)))
               if (req>0){
                 myDays      <- seq.Date(to   = as.Date(trunc(Sys.time(),'days')), from = as.Date(tempDF$day[1]), by   = 1)
                 days2today  <- length(myDays[!is.weekend(myDays)])  
@@ -80,6 +76,9 @@ shinyServer(function(input, output, session) {
                 finish      <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj)
                 if (req>0) {status="Sprint Over: Open Tickets Still Exist"} else {status="Sprint Over: All Tickets Closed!"}     
               }  
+              traj        <- seq(from=head(tempDF$openSize,n=1), to=head(tempDF2$openSize,n=1)-(avg*nrow(tempDF)), length.out=nrow(tempDF))
+              goal        <- seq(from=head(tempDF$openSize,n=1), to=0, length.out=nrow(tempDF))
+              df2         <- data.frame(tempDF$day,goal,traj)
         #(2) FUTURE:
       } else if (as.Date(trunc(Sys.time(),'days'))<as.Date(head)) {
               traj        <- seq(from=head(tempDF2$openSize,n=1), to=0, length.out=nrow(tempDF))
@@ -96,9 +95,6 @@ shinyServer(function(input, output, session) {
               status      <- "FUTURE Sprint - no status available at this time"
          #(3) PRESENT:
       } else {
-              traj        <- seq(from=head(tempDF2$openSize,n=1), to=tail(tempDF2$openMinusClose,n=1), length.out=nrow(tempDF))
-              goal        <- seq(from=head(tempDF$openSize,n=1), to=0, length.out=nrow(tempDF))
-              df2         <- data.frame(tempDF$day,goal,traj)
               myDays      <- seq.Date(to   = as.Date(tail(tempDF$day,n=1)), from = as.Date(trunc(Sys.time(),'days')), by   = 1)
               days2end    <- length(myDays[!is.weekend(myDays)])
               req         <- ceiling(sum(tail(tempDF$openMinusClose,n=1))/ days2end)  
@@ -107,6 +103,10 @@ shinyServer(function(input, output, session) {
               avg         <- ceiling(sum(tempDF$closeSize)/days2today)  
               proj        <- ceiling(tail(tempDF$openSize,n=1)/avg)
               finish      <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj) 
+              
+              traj        <- seq(from=head(tempDF2$openSize,n=1), to=head(tempDF2$openSize,n=1)-(avg*nrow(tempDF)), length.out=nrow(tempDF))
+              goal        <- seq(from=head(tempDF$openSize,n=1), to=0, length.out=nrow(tempDF))
+              df2         <- data.frame(tempDF$day,goal,traj)
               if (as.Date(finish)>as.Date(last)) {status="projected late - get crackin\'"
               } else {status='on target - good job!'}
       }
@@ -147,19 +147,35 @@ shinyServer(function(input, output, session) {
     } else {
       tempDF3 <- metrics()$tempDF2[!is.weekend(metrics()$tempDF2$day),]
       return(
+        if (as.Date(trunc(Sys.time(),'days'))>as.Date(metrics()$last)){
         ggplot(data=tempDF3)+
           geom_bar(stat="identity", aes(x=day, y=openMinusClose, fill=openMinusClose))+
           geom_vline(xintercept=as.numeric(metrics()$last), colour = "#ca0020")+
           geom_text(data=data.frame(x=metrics()$last,y=paste0("Current Sprint Due Date:            ",metrics()$last)),
                     mapping=aes(x=x, y=3, label=y), size=4, angle=90, vjust=-0.4, hjust=0) +
           geom_line(data=metrics()$df2, aes(x=tempDF.day, y=goal), colour="#f4a582", size=2)+
-          geom_line(data=metrics()$df2, aes(x=tempDF.day, y=traj), colour="#ca0020", size=2)+
           theme_bw()+
           theme(panel.grid.major=element_blank(),
                 legend.title=element_blank(),
                 legend.position="none")+
           ylab("Total Points")+
           xlab("Date")
+        } else {
+          ggplot(data=tempDF3)+
+            geom_bar(stat="identity", aes(x=day, y=openMinusClose, fill=openMinusClose))+
+            geom_vline(xintercept=as.numeric(metrics()$last), colour = "#ca0020")+
+            geom_text(data=data.frame(x=metrics()$last,y=paste0("Current Sprint Due Date:            ",metrics()$last)),
+                      mapping=aes(x=x, y=3, label=y), size=4, angle=90, vjust=-0.4, hjust=0) +
+            geom_line(data=metrics()$df2, aes(x=tempDF.day, y=goal), colour="#f4a582", size=2)+
+            geom_line(data=metrics()$df2, aes(x=tempDF.day, y=traj), colour="#ca0020", size=2)+
+            theme_bw()+
+            theme(panel.grid.major=element_blank(),
+                  legend.title=element_blank(),
+                  legend.position="none")+
+            ylab("Total Points")+
+            xlab("Date")
+          
+        }
         
         )
     }
