@@ -151,9 +151,8 @@ shinyServer(function(input, output, session) {
         ggplot(data=tempDF3)+
           geom_bar(stat="identity", aes(x=day, y=openMinusClose, fill=openMinusClose))+
           geom_vline(xintercept=as.numeric(metrics()$last), colour = "#ca0020")+
-          geom_text(data=data.frame(x=metrics()$last,y=paste0("Current Sprint Due Date:            ",metrics()$last)),
+          geom_text(data=data.frame(x=metrics()$last,y=paste0("        Sprint Due Date:            ",metrics()$last)),
                     mapping=aes(x=x, y=3, label=y), size=4, angle=90, vjust=-0.4, hjust=0) +
-          geom_line(data=metrics()$df2, aes(x=tempDF.day, y=goal), colour="#f4a582", size=2)+
           theme_bw()+
           theme(panel.grid.major=element_blank(),
                 legend.title=element_blank(),
@@ -164,7 +163,7 @@ shinyServer(function(input, output, session) {
           ggplot(data=tempDF3)+
             geom_bar(stat="identity", aes(x=day, y=openMinusClose, fill=openMinusClose))+
             geom_vline(xintercept=as.numeric(metrics()$last), colour = "#ca0020")+
-            geom_text(data=data.frame(x=metrics()$last,y=paste0("Current Sprint Due Date:            ",metrics()$last)),
+            geom_text(data=data.frame(x=metrics()$last,y=paste0("        Sprint Due Date:            ",metrics()$last)),
                       mapping=aes(x=x, y=3, label=y), size=4, angle=90, vjust=-0.4, hjust=0) +
             geom_line(data=metrics()$df2, aes(x=tempDF.day, y=goal), colour="#f4a582", size=2)+
             geom_line(data=metrics()$df2, aes(x=tempDF.day, y=traj), colour="#ca0020", size=2)+
