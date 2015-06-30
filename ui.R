@@ -24,7 +24,7 @@ shinyUI(fluidPage(
            
     ),
     column(3,
-           strong("Required Velocity (to complete on-time): "),
+           strong("Required Velocity (to complete): "),
            div(textOutput("req"), style = "color:#CBEA60"),
            strong("Points / Day")
     )

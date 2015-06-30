@@ -64,16 +64,24 @@ shinyServer(function(input, output, session) {
               goal        <- seq(from=head(tempDF$openSize,n=1), to=0, length.out=nrow(tempDF))
               df2         <- data.frame(tempDF$day,goal,traj)
               days2end    <- 0
-              req         <- ceiling(sum(tail(tempDF$openMinusClose,n=1)))  
-              myDays      <- seq.Date(to   = as.Date(tail(tempDF$day,n=1)), from = as.Date(tempDF$day[1]), by   = 1)
-              days2today  <- length(myDays[!is.weekend(myDays)])  
-              avg         <- ceiling(sum(tempDF$closeSize)/days2today)   
-              proj        <- ceiling(req/avg)
-              finish      <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj)
-              if (req>0) {status="Sprint Over: Open Tickets Still Exist"} else {status="Sprint Over: All Tickets Closed!"}
-  
+              req         <- ceiling(sum(tail(tempDF$openMinusClose,n=1)))
+              if (req>0){
+                myDays      <- seq.Date(to   = as.Date(trunc(Sys.time(),'days')), from = as.Date(tempDF$day[1]), by   = 1)
+                days2today  <- length(myDays[!is.weekend(myDays)])  
+                avg         <- ceiling(sum(tempDF$closeSize)/days2today)   
+                proj        <- ceiling(tail(tempDF$openSize,n=1)/avg)
+                finish      <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj)
+                if (req>0) {status="Sprint Over: Open Tickets Still Exist"} else {status="Sprint Over: All Tickets Closed!"}   
+              } else {
+                myDays      <- seq.Date(to   = as.Date(tail(tempDF$day,n=1)), from = as.Date(tempDF$day[1]), by   = 1)
+                days2today  <- length(myDays[!is.weekend(myDays)])  
+                avg         <- ceiling(sum(tempDF$closeSize)/days2today)   
+                proj        <- ceiling(tail(tempDF$openSize,n=1)/avg)
+                finish      <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj)
+                if (req>0) {status="Sprint Over: Open Tickets Still Exist"} else {status="Sprint Over: All Tickets Closed!"}     
+              }  
         #(2) FUTURE:
-      } else if (as.Date(trunc(Sys.time(),'days'))<as.Date(last)) {
+      } else if (as.Date(trunc(Sys.time(),'days'))<as.Date(head)) {
               traj        <- seq(from=head(tempDF2$openSize,n=1), to=0, length.out=nrow(tempDF))
               goal        <- seq(from=head(tempDF$openSize,n=1), to=0, length.out=nrow(tempDF))
               df2         <- data.frame(tempDF$day,goal,traj)
@@ -97,7 +105,7 @@ shinyServer(function(input, output, session) {
               myDays      <- seq.Date(to   = as.Date(trunc(Sys.time(),'days')), from = as.Date(tempDF$day[1]), by   = 1)
               days2today  <- length(myDays[!is.weekend(myDays)])  
               avg         <- ceiling(sum(tempDF$closeSize)/days2today)  
-              proj        <- ceiling(req/avg)
+              proj        <- ceiling(tail(tempDF$openSize,n=1)/avg)
               finish      <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj) 
               if (as.Date(finish)>as.Date(last)) {status="projected late - get crackin\'"
               } else {status='on target - good job!'}
@@ -137,8 +145,9 @@ shinyServer(function(input, output, session) {
     )
     #If current sprint, show it by week
     } else {
+      tempDF3 <- metrics()$tempDF2[!is.weekend(metrics()$tempDF2$day),]
       return(
-        ggplot(data=metrics()$tempDF2)+
+        ggplot(data=tempDF3)+
           geom_bar(stat="identity", aes(x=day, y=openMinusClose, fill=openMinusClose))+
           geom_vline(xintercept=as.numeric(metrics()$last), colour = "#ca0020")+
           geom_text(data=data.frame(x=metrics()$last,y=paste0("Current Sprint Due Date:            ",metrics()$last)),
