@@ -19,6 +19,10 @@ To personalize this shiny dashboard, the following changes are required:
 	* The first element of the array is the begin date
 	* Every date thereafter references the end of the ordinal sprint
 * Modify the sizeColor variable to match the hexidecimal color for the SIZE label in the github repo.
+* For users who wish to connect with a [personal access token] (https://github.com/blog/1509-personal-api-tokens), create a .Rprofile file with the following syntax (substitute xxx for your personal access token):
+```
+pacToken <- 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+```
 
 # Installation and Usage #
 ```

@@ -17,6 +17,13 @@ sprintDeadlines <- c(strptime("2015-05-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-08-28T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-09-18T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"))
 sizeColor = "fad8c7" #hexidecimal color for Github label that indicates size of the task (for weighting)
+
+#Check to see if the .Rprofile contains a character string 'pacToken', if so, add custom headers for authentication from now on
+if (exists('pacToken')) {
+  set_config(add_headers('Authorization' = paste0('token ',pacToken)))
+  
+}
+
 ###########################
 #No more user input needed
 ###########################------------------------------------------------------------------------------------------------------
