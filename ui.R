@@ -28,6 +28,12 @@ shinyUI(fluidPage(
            div(textOutput("req"), style = "color:#CBEA60"),
            strong("Points / Day")
     )
+  ),
+  fluidRow(
+    column(6,
+           h4("Want details on all the repo issues?"),
+           downloadButton('downloadData', 'Download')
+    )
   )
 ))# 
 

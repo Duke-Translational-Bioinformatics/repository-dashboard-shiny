@@ -184,4 +184,11 @@ shinyServer(function(input, output, session) {
   output$req <- renderText({ paste0(ceiling(metrics()$req)) })
   output$late<- renderText({ paste0(metrics()$late) })
   output$proj<- renderText({ paste0(metrics()$finish) })
+
+  output$downloadData <- downloadHandler(
+    filename = function() { paste('repoIssues.csv', sep='') },
+    content = function(file) {
+      write.csv(apiResults$output, file)
+    }
+  )
 })
