@@ -10,7 +10,7 @@ shinyUI(fluidPage(
            selectInput(inputId='plotType', 
                        label='Please choose a dashboard:', 
                        choices = apiResults$sprints,
-                       selected = 'Backlog')
+                       selected = 'Historical Velocity')
     ),
     column(3,
            strong("Average Velocity: "),

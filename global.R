@@ -164,6 +164,6 @@ currentSprintSum <- bySprint(apiResults)
 
 #The following needed for the dropdown menu
 names(apiResults$sprints) <- apiResults$sprints
-apiResults$sprints <- c("Backlog"="Backlog",apiResults$sprints)
+apiResults$sprints <- c("Backlog"="Backlog",apiResults$sprints,"Historical Velocity"="Historical Velocity")
 #gut check
 #GET("https://api.github.com/rate_limit")

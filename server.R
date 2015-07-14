@@ -49,6 +49,47 @@ shinyServer(function(input, output, session) {
                   finish=finish,
                   late=late))
     #Any of the sprint chose
+    } else if (input$plotType == "Historical Velocity") {
+      dayz      <- seq.Date(to   = as.Date(trunc(Sys.time(),'days')), from = as.Date(sprintDeadlines)[1], by   = 1)
+      days      <- dayz[!is.weekend(dayz)]
+      temp      <- apiResults$output
+      for (z in 1:(length(days))) {
+        day                   <- days[z]
+        openSize              <- sum(temp[which( (as.Date(temp$ticketCloseDate)>as.Date(day)) | (is.na(temp$ticketCloseDate))),]$ticketSize)
+        closeSize             <- sum(temp[which(as.Date(temp$ticketCloseDate)<=as.Date(day)),]$ticketSize)
+        avgVelocity           <- closeSize / z
+#         closeSize             <- sum(currentSprint[which(as.Date(currentSprint$ticketCloseDate)==as.Date(day)),]$ticketSize)
+#         sprintNo              <- unique(currentSprint$sprintNo)
+        out                   <- data.frame(day,openSize,closeSize,avgVelocity)
+        if (z==1) {final <- out} else {final <- rbind(final,out)}
+      }
+      metricDat   <- temp
+      myDays      <- seq.Date(to   = as.Date(trunc(Sys.time(),'days')), from = as.Date(sprintDeadlines)[1], by   = 1)
+      days2today  <- length(myDays[!is.weekend(myDays)])
+      myDays      <- seq.Date(to   = as.Date(tail(sprintDeadlines,n=1)), from = as.Date(trunc(Sys.time(),'days')), by   = 1)
+      days2end    <- length(myDays[!is.weekend(myDays)])
+      last        <- tail(sprintDeadlines,n=1)
+      avg         <- ceiling(sum(metricDat$ticketSize[which(metricDat$ticketState=="closed")])/days2today)
+      req         <- ceiling(sum(metricDat$ticketSize[which(metricDat$ticketState=="open")])/ days2end)
+      if (avg==0) {
+        proj        <- NA
+        finish      <- NA
+        late        <- 'No tickets closed - need some momentum to project!'
+        
+      } else {
+        proj        <- ceiling(sum(temp$ticketSize[which(temp$ticketState=="open")])/avg)
+        #Added recursive function to determine the projected end date-----------------------------------------------
+        #End of function and call it--------------------------------------------------------------------------------    
+        finish <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj)
+        if (is.na(finish)) {late<-'***not started'} else if (as.Date(finish)>as.Date(last)) {late<-'projected late - get crackin\''} else {late<-'on target - good job!'} 
+      }
+      return(list(tempDF=final,
+                  avg=avg,
+                  req=req,
+                  proj=proj,
+                  finish=finish,
+                  late=late))
+      #Any of the sprint chose
     } else {
 #       #Three scenarios exist: (1) Sprints that are complete - (2) Current Sprints - (3) Future Sprints
       tempDF      <- currentSprintSum[which(currentSprintSum$sprintNo==input$plotType),]
@@ -144,7 +185,22 @@ shinyServer(function(input, output, session) {
       xlab("Date")
     )
     #If current sprint, show it by week
-    } else {
+    } else if (input$plotType == "Historical Velocity") {
+      return(
+        ggplot(data=metrics()$tempDF, aes(x=day, y=avgVelocity))+
+          geom_point()+
+          geom_line()+
+          scale_colour_gradient(limits=c(0, max(metrics()$tempDF$avgVelocity)))+
+          theme_bw()+
+          theme(panel.grid.major=element_blank(),
+                legend.title=element_blank(),
+                legend.position="none")+
+          ylab("Average Velocity")+
+          xlab("Date")
+      )
+      #If current sprint, show it by week
+    } 
+      else {
       tempDF3 <- metrics()$tempDF2[!is.weekend(metrics()$tempDF2$day),]
       return(
         if (as.Date(trunc(Sys.time(),'days'))>as.Date(metrics()$last)){
