@@ -137,31 +137,6 @@ makeDataFrame <- function(h) {#-------------------------------------------------
 }#-----------------------------------------------------------------------------------------------------------------------
 #GET the data and put in a dataframe that can be used for backlog and other metrics
 apiResults <- makeDataFrame(h)
-#------------------------------------------------------------------------------------------------------------------------
-#We want to be able to choose from any particular sprint, so we'll do that now
-bySprint <- function(x) { #Assumes a data.frame from makeDataFrame is supplied
-  uniqueTix                 <- apiResults$final[!(duplicated(apiResults$final$ticketOrder)),]
-  for (j in (1:length(apiResults$sprints))) {
-    currentSprint           <- uniqueTix[which(uniqueTix$sprintNo==apiResults$sprints[j]),]
-    days                    <- seq(unique(currentSprint$sprintBeginDT),unique(currentSprint$sprintEndDT),by="days")
-    for (z in 1:(length(days))) {
-      day                   <- days[z]
-      openSize              <- sum(currentSprint$ticketSize)
-      closeSize             <- sum(currentSprint[which(as.Date(currentSprint$ticketCloseDate)==as.Date(day)),]$ticketSize)
-      sprintNo              <- unique(currentSprint$sprintNo)
-      out                   <- data.frame(day,openSize,closeSize,sprintNo)
-      if (z==1) {final <- out} else {final <- rbind(final,out)}
-      if (sum(as.Date(currentSprint$ticketCloseDate)==as.Date(day),na.rm=T)>0) {
-        currentSprint         <- currentSprint[-which(as.Date(currentSprint$ticketCloseDate)==as.Date(day)),]
-      }
-    }
-    if (j==1) {sprintTot <- final} else {sprintTot <- rbind(sprintTot,final)}  
-  }
-
-  return(sprintTot)
-}
-currentSprintSum <- bySprint(apiResults)
-
 #The following needed for the dropdown menu
 names(apiResults$sprints) <- apiResults$sprints
 apiResults$sprints <- c("Backlog"="Backlog",apiResults$sprints,"Historical Velocity"="Historical Velocity")
