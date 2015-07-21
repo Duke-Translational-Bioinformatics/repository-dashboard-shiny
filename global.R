@@ -16,7 +16,11 @@ sprintDeadlines <- c(strptime("2015-05-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-07-17T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-08-07T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
                      strptime("2015-08-28T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
-                     strptime("2015-09-18T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"))
+                     strptime("2015-09-18T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
+                     strptime("2015-10-09T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
+                     strptime("2015-10-30T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
+                     strptime("2015-11-20T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"),
+                     strptime("2015-12-11T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ"))
 sizeColor = "fad8c7" #hexidecimal color for Github label that indicates size of the task (for weighting)
 
 #Check to see if the .Rprofile contains a character string 'pacToken', if so, add custom headers for authentication from now on
