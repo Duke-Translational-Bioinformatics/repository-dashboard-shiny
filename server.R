@@ -83,8 +83,6 @@ shinyServer(function(input, output, session) {
       sprintInfo            <- apiResults$sprintDF[which(apiResults$sprintDF$sprintNo==input$plotType),]
       last                  <- as.Date(sprintInfo$sprintEndDT)
       head                  <- as.Date(sprintInfo$sprintBeginDT)
-      lineDays              <- seq.Date(to   = as.Date(sprintInfo$sprintEndDT), from = as.Date(sprintInfo$sprintBeginDT), by   = 1)
-      lineLength            <- length(lineDays)
       #       #Let's determin where we are:
       #       #(1) Past Sprints?:
       if (as.Date(trunc(Sys.time(),'days'))>as.Date(last)) {
@@ -104,16 +102,8 @@ shinyServer(function(input, output, session) {
           finish      <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj)
           status      <- "Sprint Over: All Tickets Closed!"     
         }  
-        traj        <- seq(from=head(graphData()$openSize,n=1), to=head(graphData()$openSize,n=1)-(avg*lineLength), length.out=lineLength)
-        goal        <- seq(from=head(graphData()$openSize,n=1), to=0, length.out=lineLength)
-        df2         <- data.frame(lineDays,goal,traj)
-        colnames(df2)<-c('day','goal','traj')
         #(2) FUTURE:
       } else if (as.Date(trunc(Sys.time(),'days'))<as.Date(head)) {
-        traj        <- seq(from=head(graphData()$openSize,n=1), to=0, length.out=lineLength)
-        goal        <- seq(from=head(graphData()$openSize,n=1), to=0, length.out=lineLength)
-        df2         <- data.frame(lineDays,goal,traj)
-        colnames(df2)<-c('day','goal','traj')
         myDays      <- seq.Date(to   = as.Date(tail(graphData()$day,n=1)), from = as.Date(head(graphData()$day,n=1)), by   = 1)
         days2end    <- length(myDays[!is.weekend(myDays)])
         req         <- ceiling(sum(tail(graphData()$openMinusClose,n=1))/ days2end)
@@ -135,23 +125,17 @@ shinyServer(function(input, output, session) {
         if (avg==0) {  finish<-NA} else {
           finish      <- estimateCompleteDateNoWkds(y=Sys.time(),x=proj)  
         }
-        traj        <- seq(from=head(graphData()$openSize,n=1), to=head(graphData()$openSize,n=1)-(avg*lineLength), length.out=lineLength)
-        goal        <- seq(from=head(graphData()$openSize,n=1), to=0, length.out=lineLength)
-        df2         <- data.frame(lineDays,goal,traj)
-        colnames(df2)<-c('day','goal','traj')
         if (avg==0) {
           status='No sprint tickets closed yet.'
         } else if (as.Date(finish)>as.Date(last)) {status="projected late - get crackin\'"
         }  else {status='on target - good job!'}
       }
       return(  list(last=as.Date(sprintInfo$sprintEndDT),
-                    df2=df2,
                     avg=avg,
                     req=req,
                     proj=proj,
                     finish=finish,
                     late=status))
-      
     } 
   })
   #--------------------------------------------------------------------------------------------------------------------------- 
@@ -190,16 +174,19 @@ shinyServer(function(input, output, session) {
           xlab("Date")
       )
       #If current sprint, show it by week
-    } else {
-      
+    } else {  
+      temp <- graphData()[c(1,nrow(graphData())),]
+      temp[2,'day'] <- metrics()$last
+      temp[2,'openSize'] <- 0
       return(
           ggplot(data=graphData())+
             geom_bar(stat="identity", aes(x=day, y=openSize, fill=openSize))+
+            geom_line(data=graphData()[c(1,nrow(graphData())),],aes(x=day, y=openSize),color='red')+
+            geom_line(data=temp,aes(x=day, y=openSize),color='green')+
             geom_vline(xintercept=as.numeric(metrics()$last), colour = "#ca0020")+
             geom_text(data=data.frame(x=metrics()$last,y=paste0("        Sprint Due Date:            ",metrics()$last)),
                       mapping=aes(x=x, y=3, label=y), size=4, angle=90, vjust=-0.4, hjust=0) +
-            geom_line(data=metrics()$df2, aes(x=metrics()$df2$day, y=goal), colour="#f4a582", size=2)+
-            geom_line(data=metrics()$df2, aes(x=metrics()$df2$day, y=traj), colour="#ca0020", size=2)+
+            geom_abline(intercept=50,slope=-1)+
             theme_bw()+
             theme(panel.grid.major=element_blank(),
                   legend.title=element_blank(),
@@ -214,7 +201,6 @@ shinyServer(function(input, output, session) {
   output$req <- renderText({ paste0(ceiling(metrics()$req)) })
   output$late<- renderText({ paste0(metrics()$late) })
   output$proj<- renderText({ paste0(metrics()$finish) })
-
   output$downloadData <- downloadHandler(
     filename = function() { paste('repoIssues.csv', sep='') },
     content = function(file) {
