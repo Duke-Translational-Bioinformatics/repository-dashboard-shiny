@@ -16,6 +16,7 @@ shinyServer(function(input, output, session) {
   #--------------------------------------------------------------------------------------------------------------------------- 
   #Create a dataframe that can be used for all the graphics
   graphData <- reactive({
+    sprintInfo              <- apiResults$sprintDF[which(apiResults$sprintDF$sprintNo==input$plotType),]
     dayz                    <- seq.Date(to   = as.Date(trunc(Sys.time(),'days')), from = as.Date(sprintDeadlines)[1], by   = 1)
     days                    <- dayz[!is.weekend(dayz)]
     if (input$plotType %in% c('Historical Velocity','Backlog')) {
@@ -26,13 +27,15 @@ shinyServer(function(input, output, session) {
       openSize              <- sum(temp[which( (as.Date(temp$ticketCloseDate)>as.Date(day)) | (is.na(temp$ticketCloseDate))),]$ticketSize)
       closeSize             <- sum(temp[which(as.Date(temp$ticketCloseDate)<=as.Date(day)),]$ticketSize)
       avgVelocity           <- closeSize / z
-      #         closeSize             <- sum(currentSprint[which(as.Date(currentSprint$ticketCloseDate)==as.Date(day)),]$ticketSize)
-      #         sprintNo              <- unique(currentSprint$sprintNo)
       out                   <- data.frame(day,openSize,closeSize,avgVelocity)
       if (z==1) {final <- out} else {final <- rbind(final,out)}
     }
     if (input$plotType %in% c('Historical Velocity','Backlog')) {
       return(final)
+    } else if (as.Date(trunc(Sys.time(),'days'))<as.Date(sprintInfo$sprintBeginDT)) {
+            z <- tail(final,n=1)
+            z$day <- as.Date(sprintInfo$sprintBeginDT)
+            return(z)
     } else {
       temps                 <- final[which(final$day>=as.Date(apiResults$sprintDF[which(apiResults$sprintDF$sprintNo==input$plotType),]$sprintBeginDT)),]
       pos1                  <- which(temps$openSize %in% 0)[1] 
@@ -104,9 +107,9 @@ shinyServer(function(input, output, session) {
         }  
         #(2) FUTURE:
       } else if (as.Date(trunc(Sys.time(),'days'))<as.Date(head)) {
-        myDays      <- seq.Date(to   = as.Date(tail(graphData()$day,n=1)), from = as.Date(head(graphData()$day,n=1)), by   = 1)
+        myDays      <- seq.Date(to   = as.Date(sprintInfo$sprintEndDT), from = as.Date(sprintInfo$sprintBeginDT), by   = 1)
         days2end    <- length(myDays[!is.weekend(myDays)])
-        req         <- ceiling(sum(tail(graphData()$openMinusClose,n=1))/ days2end)
+        req         <- ceiling(sum(tail(graphData()$openSize,n=1))/ days2end)
         myDays      <- seq.Date(to   = as.Date(tail(graphData()$day,n=1)), from = as.Date(head(graphData()$day,n=1)), by   = 1)
         days2today  <- length(myDays[!is.weekend(myDays)])  
         avg         <- NA 
