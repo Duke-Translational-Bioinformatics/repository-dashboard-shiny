@@ -24,19 +24,19 @@ To personalize this shiny dashboard, the following changes are required:
 pacToken <- 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 ```
 
-# Installation and Usage #
+# Installation and Deployment #
 ```
 git clone https://github.com/Duke-Translational-Bioinformatics/repository-dashboard-shiny.git
 ```
-In RStudio, ensure the shiny package is installed:
+Using Docker to deploy:
 ```
-if (!require("shiny")) install.packages("shiny")
+docker build -t benneely/dashboard:1.0
 ```
-Open the global.R file in RStudio and ensure that the working directory is the same as where the cloned repo is stored
+This image is built from the [rocker/shiny] (https://registry.hub.docker.com/u/rocker/shiny/) image, please see that page for additional deployment configurations. One possible strategy:
 ```
-getwd()
+docker run --rm -p 3838:3838 benneely/dashboard:1.0
 ```
-Click the "Run App" button at the top right of the RStudio screen
+Once complete, the app should be available via [http://localhost:3838/dashboard/] (http://localhost:3838/dashboard/)
 
 # Features #
 Utilizes the Github API v3 to extract issues and create a dashboard that contains the following visualizations:
